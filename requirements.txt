@@ -1,0 +1,38 @@
+# ─────────────────────────────────────────────────────────────
+# Python Testing Template — Dependencies
+# TEMPLATE NOTE: Remove what you don't need for your specific project.
+# Install with: pip install -r requirements.txt
+# ─────────────────────────────────────────────────────────────
+
+# ── Web Framework ──────────────────────────────────────────
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0       # ASGI server for running the app locally
+python-multipart>=0.0.9         # Required for form data (OAuth2 login)
+
+# ── Database ────────────────────────────────────────────────
+sqlalchemy>=2.0.0               # ORM — models, queries, sessions
+aiosqlite>=0.20.0               # Async SQLite driver (SQLite for dev/test)
+# psycopg2-binary>=2.9.0        # UNCOMMENT for PostgreSQL in production
+
+# ── Authentication ──────────────────────────────────────────
+python-jose[cryptography]>=3.3.0  # JWT encoding/decoding
+passlib[bcrypt]>=1.7.4            # Password hashing
+
+# ── AI / LLM ────────────────────────────────────────────────
+anthropic>=0.34.0               # Anthropic SDK — Claude API
+# openai>=1.0.0                 # UNCOMMENT if using OpenAI
+
+# ── Validation & Settings ───────────────────────────────────
+pydantic>=2.0.0                 # Data validation (built into FastAPI)
+pydantic-settings>=2.0.0        # Settings from .env file
+python-dotenv>=1.0.0            # Load .env file
+
+# ── HTTP Client ─────────────────────────────────────────────
+httpx>=0.27.0                   # Required by FastAPI TestClient
+
+# ── Testing ─────────────────────────────────────────────────
+pytest>=8.0.0                   # Test runner
+pytest-asyncio>=0.23.0          # Async test support
+
+# ── Linting (development only) ──────────────────────────────
+ruff>=0.6.0                     # Fast Python linter + formatter

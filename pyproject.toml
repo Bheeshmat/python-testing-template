@@ -1,0 +1,30 @@
+# ─────────────────────────────────────────────────────────────
+# Ruff — Python linter and formatter configuration
+# TEMPLATE NOTE: Ruff replaces flake8 + black + isort in one tool.
+# Run:  ruff check .       → lint
+#       ruff check . --fix → auto-fix lint issues
+#       ruff format .      → format code (like black)
+# ─────────────────────────────────────────────────────────────
+
+[tool.ruff]
+line-length = 88          # matches black default
+target-version = "py311"  # minimum Python version
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes (unused imports, undefined names)
+    "I",   # isort (import ordering)
+    "N",   # pep8-naming conventions
+    "UP",  # pyupgrade (use modern Python syntax)
+]
+ignore = [
+    "E501",  # line too long — ruff format handles this
+]
+
+# Ignore unused imports in __init__.py files (common for re-exports)
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+# Ignore unused imports in conftest.py (fixtures registered but not directly used)
+"tests/conftest.py" = ["F401"]
