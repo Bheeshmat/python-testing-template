@@ -10,12 +10,10 @@ TEMPLATE NOTE:
 """
 
 import json
-import os
 
 import anthropic
-from pydantic import BaseModel, ValidationError
-
 from dotenv import load_dotenv
+from pydantic import BaseModel, ValidationError
 
 load_dotenv()
 
@@ -30,6 +28,7 @@ MODEL = "claude-sonnet-4-6"  # update to latest model as needed
 # ── Pydantic Schemas for Structured Output ────────────────────────────────────
 class TaskAnalysis(BaseModel):
     """Schema for the structured output from analyse_task()."""
+
     summary: str
     suggested_priority: str  # low | medium | high
     estimated_hours: float
@@ -37,6 +36,7 @@ class TaskAnalysis(BaseModel):
 
 
 # ── Simple LLM Calls ─────────────────────────────────────────────────────────
+
 
 def summarise_task(title: str, description: str) -> dict:
     """
@@ -139,7 +139,12 @@ def analyse_task(title: str, description: str) -> TaskAnalysis:
                             "description": "List of 2-4 concrete next actions.",
                         },
                     },
-                    "required": ["summary", "suggested_priority", "estimated_hours", "key_actions"],
+                    "required": [
+                        "summary",
+                        "suggested_priority",
+                        "estimated_hours",
+                        "key_actions",
+                    ],
                 },
             }
         ],
@@ -257,7 +262,9 @@ def execute_agent_tool(tool_name: str, tool_input: dict) -> str:
         price = calculate_discount(tool_input["price"], tool_input["tier"])
         return json.dumps({"discounted_price": price})
 
-    raise ValueError(f"Unknown tool: {tool_name}. Available: {[t['name'] for t in AGENT_TOOLS]}")
+    raise ValueError(
+        f"Unknown tool: {tool_name}. Available: {[t['name'] for t in AGENT_TOOLS]}"
+    )
 
 
 def run_task_agent(user_message: str) -> str:

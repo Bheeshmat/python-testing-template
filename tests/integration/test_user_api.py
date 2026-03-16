@@ -21,12 +21,11 @@ PATTERNS DEMONSTRATED:
     - Test ownership rules (users can only access their own data)
 """
 
-import pytest
-
 
 # ═════════════════════════════════════════════════════════════════════════════
 # Health Check
 # ═════════════════════════════════════════════════════════════════════════════
+
 
 class TestHealthCheck:
     def test_returns_200_with_status_ok(self, client):
@@ -39,8 +38,8 @@ class TestHealthCheck:
 # POST /users — create a new user
 # ═════════════════════════════════════════════════════════════════════════════
 
-class TestCreateUser:
 
+class TestCreateUser:
     def test_returns_201_and_user_data_for_valid_payload(self, client):
         payload = {
             "username": "alice",
@@ -54,10 +53,10 @@ class TestCreateUser:
         data = response.json()
         assert data["username"] == "alice"
         assert data["email"] == "alice@example.com"
-        assert data["tier"] == "free"           # default tier
+        assert data["tier"] == "free"  # default tier
         assert data["is_active"] is True
-        assert data["id"] is not None           # DB assigned a real ID
-        assert "password" not in data           # password is never returned
+        assert data["id"] is not None  # DB assigned a real ID
+        assert "password" not in data  # password is never returned
         assert "hashed_password" not in data
 
     def test_returns_409_for_duplicate_email(self, client, user_factory):
@@ -65,21 +64,27 @@ class TestCreateUser:
         user_factory(email="taken@example.com")
 
         # Try to register with the same email
-        response = client.post("/users", json={
-            "username": "newuser",
-            "email": "taken@example.com",
-            "password": "password123",
-        })
+        response = client.post(
+            "/users",
+            json={
+                "username": "newuser",
+                "email": "taken@example.com",
+                "password": "password123",
+            },
+        )
 
         assert response.status_code == 409
         assert "already registered" in response.json()["detail"].lower()
 
     def test_returns_422_when_required_field_missing(self, client):
         # Missing password
-        response = client.post("/users", json={
-            "username": "alice",
-            "email": "alice@example.com",
-        })
+        response = client.post(
+            "/users",
+            json={
+                "username": "alice",
+                "email": "alice@example.com",
+            },
+        )
         # FastAPI automatically returns 422 for missing required Pydantic fields
         assert response.status_code == 422
 
@@ -88,8 +93,8 @@ class TestCreateUser:
 # GET /users/me — get current user's profile
 # ═════════════════════════════════════════════════════════════════════════════
 
-class TestGetMe:
 
+class TestGetMe:
     def test_returns_401_when_not_authenticated(self, client):
         """No auth token provided — must return 401."""
         response = client.get("/users/me")
@@ -108,6 +113,7 @@ class TestGetMe:
         # Update the auth override to return this user's actual ID
         from src.auth import get_current_user
         from src.main import app
+
         app.dependency_overrides[get_current_user] = lambda: {"user_id": user.id}
 
         response = authenticated_client.get("/users/me")
@@ -121,8 +127,8 @@ class TestGetMe:
 # GET /users/{user_id} — get user by ID
 # ═════════════════════════════════════════════════════════════════════════════
 
-class TestGetUser:
 
+class TestGetUser:
     def test_returns_401_when_not_authenticated(self, client):
         response = client.get("/users/1")
         assert response.status_code == 401
@@ -146,8 +152,8 @@ class TestGetUser:
 # POST /tasks — create a new task
 # ═════════════════════════════════════════════════════════════════════════════
 
-class TestCreateTask:
 
+class TestCreateTask:
     def test_returns_401_when_not_authenticated(self, client):
         response = client.post("/tasks", json={"title": "My Task"})
         assert response.status_code == 401
@@ -165,7 +171,7 @@ class TestCreateTask:
         data = response.json()
         assert data["title"] == "Write unit tests"
         assert data["priority"] == "high"
-        assert data["status"] == "todo"     # default status
+        assert data["status"] == "todo"  # default status
         assert data["id"] is not None
 
     def test_defaults_to_medium_priority_when_not_specified(self, authenticated_client):
@@ -183,8 +189,8 @@ class TestCreateTask:
 # GET /tasks — list tasks for current user
 # ═════════════════════════════════════════════════════════════════════════════
 
-class TestListTasks:
 
+class TestListTasks:
     def test_returns_401_when_not_authenticated(self, client):
         response = client.get("/tasks")
         assert response.status_code == 401
@@ -199,14 +205,22 @@ class TestListTasks:
         self, authenticated_client, user_factory, task_factory
     ):
         """Users should only see their own tasks — not other users' tasks."""
-        # The authenticated_client has user_id=1 (from conftest override)
-        # Create a different user and give them tasks
+        from src.auth import get_current_user
+        from src.main import app
+
+        # Create current user first — they claim id=1 (first insert)
+        current_user = user_factory()
+        app.dependency_overrides[get_current_user] = lambda: {
+            "user_id": current_user.id
+        }
+
+        # Create a different user and give them tasks — they get id=2
         other_user = user_factory()
         task_factory(user_id=other_user.id, title="Other user's task")
 
         response = authenticated_client.get("/tasks")
 
-        # user_id=1 has no tasks — should get empty list
+        # current_user has no tasks — should get empty list
         assert response.status_code == 200
         assert response.json() == []
 
@@ -215,8 +229,8 @@ class TestListTasks:
 # PATCH /tasks/{task_id}/status — update task status
 # ═════════════════════════════════════════════════════════════════════════════
 
-class TestUpdateTaskStatus:
 
+class TestUpdateTaskStatus:
     def test_returns_200_for_valid_status_transition(
         self, authenticated_client, task_factory
     ):

@@ -19,20 +19,20 @@ PATTERNS DEMONSTRATED:
 
 from unittest.mock import patch
 
-import pytest
-
-
 # ═════════════════════════════════════════════════════════════════════════════
 # POST /ai/summarise
 # ═════════════════════════════════════════════════════════════════════════════
 
-class TestSummariseEndpoint:
 
+class TestSummariseEndpoint:
     def test_returns_401_when_not_authenticated(self, client):
-        response = client.post("/ai/summarise", json={
-            "title": "Task title",
-            "description": "Task description",
-        })
+        response = client.post(
+            "/ai/summarise",
+            json={
+                "title": "Task title",
+                "description": "Task description",
+            },
+        )
         assert response.status_code == 401
 
     @patch("src.services.ai_service.client.messages.create")
@@ -41,10 +41,13 @@ class TestSummariseEndpoint:
     ):
         mock_create.return_value = mock_llm_response("A concise task summary.")
 
-        response = authenticated_client.post("/ai/summarise", json={
-            "title": "Fix login bug",
-            "description": "Users cannot log in on mobile devices.",
-        })
+        response = authenticated_client.post(
+            "/ai/summarise",
+            json={
+                "title": "Fix login bug",
+                "description": "Users cannot log in on mobile devices.",
+            },
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -56,10 +59,13 @@ class TestSummariseEndpoint:
     @patch("src.services.ai_service.client.messages.create")
     def test_returns_422_for_empty_title(self, mock_create, authenticated_client):
         """Empty title is caught by the service layer before calling the LLM."""
-        response = authenticated_client.post("/ai/summarise", json={
-            "title": "",
-            "description": "Some description.",
-        })
+        response = authenticated_client.post(
+            "/ai/summarise",
+            json={
+                "title": "",
+                "description": "Some description.",
+            },
+        )
 
         assert response.status_code == 422
         assert "required" in response.json()["detail"].lower()
@@ -67,10 +73,13 @@ class TestSummariseEndpoint:
 
     def test_returns_422_when_required_fields_missing(self, authenticated_client):
         """FastAPI Pydantic validation catches missing fields."""
-        response = authenticated_client.post("/ai/summarise", json={
-            "title": "Only title, no description",
-            # description missing
-        })
+        response = authenticated_client.post(
+            "/ai/summarise",
+            json={
+                "title": "Only title, no description",
+                # description missing
+            },
+        )
         # Pydantic will return 422 for missing required field
         assert response.status_code == 422
 
@@ -79,8 +88,8 @@ class TestSummariseEndpoint:
 # POST /ai/agent
 # ═════════════════════════════════════════════════════════════════════════════
 
-class TestAgentEndpoint:
 
+class TestAgentEndpoint:
     def test_returns_401_when_not_authenticated(self, client):
         response = client.post("/ai/agent", json={"message": "Hello"})
         assert response.status_code == 401
@@ -93,9 +102,9 @@ class TestAgentEndpoint:
             "I can help you manage your tasks!"
         )
 
-        response = authenticated_client.post("/ai/agent", json={
-            "message": "What can you help me with?"
-        })
+        response = authenticated_client.post(
+            "/ai/agent", json={"message": "What can you help me with?"}
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -124,9 +133,9 @@ class TestAgentEndpoint:
             mock_llm_response("Task 1 has medium priority."),
         ]
 
-        response = authenticated_client.post("/ai/agent", json={
-            "message": "What are the details of task 1?"
-        })
+        response = authenticated_client.post(
+            "/ai/agent", json={"message": "What are the details of task 1?"}
+        )
 
         assert response.status_code == 200
         assert response.json()["response"] == "Task 1 has medium priority."

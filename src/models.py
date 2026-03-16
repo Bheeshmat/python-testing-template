@@ -12,7 +12,7 @@ TEMPLATE NOTE:
 import enum
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from src.database import Base
@@ -20,19 +20,19 @@ from src.database import Base
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 # Using Python enums + SQLAlchemy String columns (more portable than DB-level enums)
-class TierEnum(str, enum.Enum):
+class TierEnum(enum.StrEnum):
     FREE = "free"
     PRO = "pro"
     ENTERPRISE = "enterprise"
 
 
-class TaskStatusEnum(str, enum.Enum):
+class TaskStatusEnum(enum.StrEnum):
     TODO = "todo"
     IN_PROGRESS = "in_progress"
     DONE = "done"
 
 
-class TaskPriorityEnum(str, enum.Enum):
+class TaskPriorityEnum(enum.StrEnum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"

@@ -21,7 +21,7 @@ PATTERNS DEMONSTRATED:
 """
 
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -32,10 +32,10 @@ from src.services.ai_service import (
     summarise_task,
 )
 
-
 # ═════════════════════════════════════════════════════════════════════════════
 # summarise_task — basic LLM call
 # ═════════════════════════════════════════════════════════════════════════════
+
 
 class TestSummariseTask:
     """Tests for summarise_task() — a simple LLM text generation call."""
@@ -53,7 +53,9 @@ class TestSummariseTask:
         )
 
         # Act
-        result = summarise_task("Fix login bug", "Users can't log in on mobile devices.")
+        result = summarise_task(
+            "Fix login bug", "Users can't log in on mobile devices."
+        )
 
         # Assert — response parsing is correct
         assert result["summary"] == "Fix the authentication bug in the login flow."
@@ -62,7 +64,9 @@ class TestSummariseTask:
         assert result["output_tokens"] == 10
 
     @patch("src.services.ai_service.client.messages.create")
-    def test_prompt_contains_title_and_description(self, mock_create, mock_llm_response):
+    def test_prompt_contains_title_and_description(
+        self, mock_create, mock_llm_response
+    ):
         """Verifies we're sending the right data to the LLM."""
         mock_create.return_value = mock_llm_response("A summary.")
 
@@ -103,6 +107,7 @@ class TestSummariseTask:
 # analyse_task — structured output with tool_choice
 # ═════════════════════════════════════════════════════════════════════════════
 
+
 class TestAnalyseTask:
     """Tests for analyse_task() — structured output via tool_choice."""
 
@@ -111,12 +116,18 @@ class TestAnalyseTask:
         self, mock_create, mock_structured_response
     ):
         # Arrange — mock a valid structured response from the LLM
-        mock_create.return_value = mock_structured_response({
-            "summary": "Fix the login authentication issue.",
-            "suggested_priority": "high",
-            "estimated_hours": 3.0,
-            "key_actions": ["Reproduce the bug", "Write a failing test", "Implement fix"],
-        })
+        mock_create.return_value = mock_structured_response(
+            {
+                "summary": "Fix the login authentication issue.",
+                "suggested_priority": "high",
+                "estimated_hours": 3.0,
+                "key_actions": [
+                    "Reproduce the bug",
+                    "Write a failing test",
+                    "Implement fix",
+                ],
+            }
+        )
 
         # Act
         result = analyse_task("Fix login bug", "Mobile login fails for all users.")
@@ -133,12 +144,14 @@ class TestAnalyseTask:
     ):
         """Pydantic validation catches incomplete LLM responses."""
         # Missing estimated_hours — Pydantic should reject this
-        mock_create.return_value = mock_structured_response({
-            "summary": "A summary.",
-            "suggested_priority": "medium",
-            # estimated_hours missing
-            "key_actions": ["Action 1"],
-        })
+        mock_create.return_value = mock_structured_response(
+            {
+                "summary": "A summary.",
+                "suggested_priority": "medium",
+                # estimated_hours missing
+                "key_actions": ["Action 1"],
+            }
+        )
 
         with pytest.raises(ValueError, match="invalid structure"):
             analyse_task("Some task", "Some description.")
@@ -150,14 +163,18 @@ class TestAnalyseTask:
         mock_create.assert_not_called()
 
     @patch("src.services.ai_service.client.messages.create")
-    def test_uses_tool_choice_to_force_structured_output(self, mock_create, mock_structured_response):
+    def test_uses_tool_choice_to_force_structured_output(
+        self, mock_create, mock_structured_response
+    ):
         """Verifies the API call includes tool_choice to force structured output."""
-        mock_create.return_value = mock_structured_response({
-            "summary": "Summary.",
-            "suggested_priority": "low",
-            "estimated_hours": 1.0,
-            "key_actions": ["Do thing"],
-        })
+        mock_create.return_value = mock_structured_response(
+            {
+                "summary": "Summary.",
+                "suggested_priority": "low",
+                "estimated_hours": 1.0,
+                "key_actions": ["Do thing"],
+            }
+        )
 
         analyse_task("Task", "Description.")
 
@@ -169,6 +186,7 @@ class TestAnalyseTask:
 # ═════════════════════════════════════════════════════════════════════════════
 # execute_agent_tool — tool execution (no LLM needed)
 # ═════════════════════════════════════════════════════════════════════════════
+
 
 class TestExecuteAgentTool:
     """
@@ -207,6 +225,7 @@ class TestExecuteAgentTool:
 # ═════════════════════════════════════════════════════════════════════════════
 # run_task_agent — the full agent loop
 # ═════════════════════════════════════════════════════════════════════════════
+
 
 class TestRunTaskAgent:
     """
@@ -273,9 +292,7 @@ class TestRunTaskAgent:
         assert tool_result_message["content"][0]["type"] == "tool_result"
 
     @patch("src.services.ai_service.client.messages.create")
-    def test_passes_user_message_in_first_call(
-        self, mock_create, mock_llm_response
-    ):
+    def test_passes_user_message_in_first_call(self, mock_create, mock_llm_response):
         """Verifies the user's message is included in the first LLM call."""
         mock_create.return_value = mock_llm_response("Sure, I can help.")
 
@@ -288,6 +305,7 @@ class TestRunTaskAgent:
 # ═════════════════════════════════════════════════════════════════════════════
 # Evaluation tests — call the REAL API (run separately with: pytest -m evaluation)
 # ═════════════════════════════════════════════════════════════════════════════
+
 
 @pytest.mark.evaluation
 class TestSummariseTaskEvaluation:
@@ -308,7 +326,7 @@ class TestSummariseTaskEvaluation:
         )
         assert len(result["summary"]) > 20
         assert result["word_count"] < 50  # should be concise
-        assert result["word_count"] > 3   # should be meaningful
+        assert result["word_count"] > 3  # should be meaningful
 
     def test_analyse_task_returns_valid_structure(self):
         result = analyse_task(
