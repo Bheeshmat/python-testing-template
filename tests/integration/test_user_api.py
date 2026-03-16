@@ -210,7 +210,9 @@ class TestListTasks:
 
         # Create current user first — they claim id=1 (first insert)
         current_user = user_factory()
-        app.dependency_overrides[get_current_user] = lambda: {"user_id": current_user.id}
+        app.dependency_overrides[get_current_user] = lambda: {
+            "user_id": current_user.id
+        }
 
         # Create a different user and give them tasks — they get id=2
         other_user = user_factory()
