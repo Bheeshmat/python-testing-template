@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from src.auth import create_access_token, get_current_user
 from src.database import Base, engine, get_db
-from src.models import TaskPriorityEnum, TaskStatusEnum, TierEnum
+from src.models import TaskPriorityEnum, TierEnum
 from src.services import ai_service, user_service
 
 # ── App Initialisation ────────────────────────────────────────────────────────
@@ -103,6 +103,7 @@ def login(
 # ── User Routes ───────────────────────────────────────────────────────────────
 # IMPORTANT: /users/me must be defined BEFORE /users/{user_id}
 # FastAPI matches routes top-to-bottom — "me" would otherwise be treated as an int
+
 
 @app.get("/users/me", response_model=UserResponse, tags=["Users"])
 def get_me(

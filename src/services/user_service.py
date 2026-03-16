@@ -13,8 +13,8 @@ from sqlalchemy.orm import Session
 from src.auth import hash_password, verify_password
 from src.models import Task, TaskPriorityEnum, TaskStatusEnum, TierEnum, User
 
-
 # ── Pure Logic (no DB) — Easiest to unit test ─────────────────────────────────
+
 
 def calculate_discount(price: float, tier: str) -> float:
     """
@@ -79,6 +79,7 @@ def validate_task_status_transition(current_status: str, new_status: str) -> boo
 
 
 # ── DB-dependent Logic — Requires mocking or real DB in tests ─────────────────
+
 
 def get_user_by_email(email: str, db: Session) -> User | None:
     """Returns a User matching the email, or None if not found."""
@@ -174,7 +175,9 @@ def create_task(
     return task
 
 
-def update_task_status(task_id: int, new_status: str, user_id: int, db: Session) -> Task:
+def update_task_status(
+    task_id: int, new_status: str, user_id: int, db: Session
+) -> Task:
     """
     Updates a task's status after validating the transition is allowed.
 

@@ -14,16 +14,14 @@ PATTERNS DEMONSTRATED:
     - Testing token validation (expired, tampered, missing)
 """
 
-import pytest
 from src.auth import create_access_token
-
 
 # ═════════════════════════════════════════════════════════════════════════════
 # POST /auth/login
 # ═════════════════════════════════════════════════════════════════════════════
 
-class TestLogin:
 
+class TestLogin:
     def test_returns_token_for_valid_credentials(self, client, user_factory):
         """
         Creates a user with a known password, then verifies login works.
@@ -32,10 +30,13 @@ class TestLogin:
         user_factory(email="login@example.com")
 
         # OAuth2 login uses form data (not JSON)
-        response = client.post("/auth/login", data={
-            "username": "login@example.com",
-            "password": "testpassword123",
-        })
+        response = client.post(
+            "/auth/login",
+            data={
+                "username": "login@example.com",
+                "password": "testpassword123",
+            },
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -46,19 +47,25 @@ class TestLogin:
     def test_returns_401_for_wrong_password(self, client, user_factory):
         user_factory(email="user@example.com")
 
-        response = client.post("/auth/login", data={
-            "username": "user@example.com",
-            "password": "wrongpassword",
-        })
+        response = client.post(
+            "/auth/login",
+            data={
+                "username": "user@example.com",
+                "password": "wrongpassword",
+            },
+        )
 
         assert response.status_code == 401
         assert "Incorrect" in response.json()["detail"]
 
     def test_returns_401_for_nonexistent_email(self, client):
-        response = client.post("/auth/login", data={
-            "username": "nobody@example.com",
-            "password": "anypassword",
-        })
+        response = client.post(
+            "/auth/login",
+            data={
+                "username": "nobody@example.com",
+                "password": "anypassword",
+            },
+        )
 
         assert response.status_code == 401
 
@@ -71,6 +78,7 @@ class TestLogin:
 # ═════════════════════════════════════════════════════════════════════════════
 # Protected routes — token validation
 # ═════════════════════════════════════════════════════════════════════════════
+
 
 class TestProtectedRoutes:
     """
@@ -102,9 +110,7 @@ class TestProtectedRoutes:
         )
         assert response.status_code == 401
 
-    def test_valid_token_grants_access_to_protected_route(
-        self, client, user_factory
-    ):
+    def test_valid_token_grants_access_to_protected_route(self, client, user_factory):
         """
         Full flow: create user → login → use token → access protected route.
         This is the end-to-end auth test.

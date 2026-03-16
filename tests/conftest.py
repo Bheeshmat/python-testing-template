@@ -28,17 +28,15 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.auth import get_current_user, hash_password
-from src.database import Base, get_db
-from src.main import app
-
 # ── CRITICAL: Import all models before create_all() ──────────────────────────
 # SQLAlchemy's Base.metadata only knows about models that have been imported.
 # If a model isn't imported here, its table won't be created in the test DB.
 # Add an import here for every new model file you create.
 from src import models  # noqa: F401 — registers User, Task with Base.metadata
+from src.auth import get_current_user, hash_password
+from src.database import Base, get_db
+from src.main import app
 from src.models import Task, User  # noqa: F401 — available for type hints in factories
-
 
 # ═════════════════════════════════════════════════════════════════════════════
 # DATABASE SETUP
@@ -82,6 +80,7 @@ def create_test_tables():
 # DB SESSION — Isolated per test via transaction rollback
 # ═════════════════════════════════════════════════════════════════════════════
 
+
 @pytest.fixture
 def db_session():
     """
@@ -121,6 +120,7 @@ def db_session():
 # FASTAPI TEST CLIENTS
 # ═════════════════════════════════════════════════════════════════════════════
 
+
 @pytest.fixture
 def client(db_session):
     """
@@ -135,6 +135,7 @@ def client(db_session):
             response = client.post("/users", json={...})
             assert response.status_code == 201
     """
+
     def override_get_db():
         yield db_session
 
@@ -169,6 +170,7 @@ def authenticated_client(client):
         auth flow itself (login, token expiry, invalid tokens).
         See tests/integration/test_auth_api.py for examples.
     """
+
     def override_get_current_user():
         # TEMPLATE NOTE: Return whatever shape your routes expect from current_user
         return {"user_id": 1}
@@ -198,6 +200,7 @@ def authenticated_client(client):
 #   2. {**defaults, **overrides} merges dicts — overrides wins on conflict
 #   3. User(**merged) unpacks the dict as keyword arguments
 
+
 def make_user(**overrides) -> User:
     """
     Creates a User object with sensible defaults. Does NOT save to DB.
@@ -210,8 +213,8 @@ def make_user(**overrides) -> User:
         make_user(email="alice@example.com")  # specific email for duplicate tests
     """
     defaults = {
-        "username": f"user_{uuid.uuid4().hex[:8]}",       # unique username
-        "email": f"{uuid.uuid4().hex[:8]}@example.com",   # unique email
+        "username": f"user_{uuid.uuid4().hex[:8]}",  # unique username
+        "email": f"{uuid.uuid4().hex[:8]}@example.com",  # unique email
         "hashed_password": hash_password("testpassword123"),
         "tier": "free",
         "is_active": True,
@@ -232,6 +235,7 @@ def user_factory(db_session):
             alice = user_factory(tier="pro")
             bob   = user_factory(tier="enterprise")
     """
+
     def _create(**overrides) -> User:
         user = make_user(**overrides)
         db_session.add(user)
@@ -274,6 +278,7 @@ def task_factory(db_session):
             user = user_factory()
             task = task_factory(user_id=user.id, priority="high")
     """
+
     def _create(user_id: int, **overrides) -> Task:
         task = make_task(user_id=user_id, **overrides)
         db_session.add(task)
@@ -303,6 +308,7 @@ def task_factory(db_session):
 #   response.usage.input_tokens         → tokens in the prompt
 #   response.usage.output_tokens        → tokens in the response
 
+
 @pytest.fixture
 def mock_llm_response():
     """
@@ -317,6 +323,7 @@ def mock_llm_response():
             result = summarise_task("Title", "Description")
             assert result["summary"] == "The summary text."
     """
+
     def _make(text: str, input_tokens: int = 100, output_tokens: int = 50):
         mock = MagicMock()
         mock.stop_reason = "end_turn"
@@ -345,6 +352,7 @@ def mock_tool_use_response():
             result = run_task_agent("What are the details of task 1?")
             assert mock_create.call_count == 2
     """
+
     def _make(tool_name: str, tool_input: dict, tool_id: str = "toolu_test123"):
         mock = MagicMock()
         mock.stop_reason = "tool_use"
@@ -377,6 +385,7 @@ def mock_structured_response():
             result = analyse_task("Fix bug", "Login fails on mobile")
             assert result.suggested_priority == "high"
     """
+
     def _make(tool_input: dict):
         mock = MagicMock()
         mock.stop_reason = "tool_use"

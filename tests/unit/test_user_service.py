@@ -29,10 +29,10 @@ from src.services.user_service import (
 # Import the factory function directly (not a fixture — it doesn't need the DB)
 from tests.conftest import make_user
 
-
 # ═════════════════════════════════════════════════════════════════════════════
 # calculate_discount
 # ═════════════════════════════════════════════════════════════════════════════
+
 
 class TestCalculateDiscount:
     """Tests for the calculate_discount() function."""
@@ -67,13 +67,16 @@ class TestCalculateDiscount:
     # Use parametrize when testing the same behaviour with different values.
     # Each tuple is: (price, tier, expected_result)
 
-    @pytest.mark.parametrize("price,tier,expected", [
-        (200.0, TierEnum.FREE, 200.0),
-        (200.0, TierEnum.PRO, 180.0),
-        (200.0, TierEnum.ENTERPRISE, 150.0),
-        (0.0, TierEnum.PRO, 0.0),       # zero price edge case
-        (0.01, TierEnum.PRO, 0.01),     # small value rounds correctly
-    ])
+    @pytest.mark.parametrize(
+        "price,tier,expected",
+        [
+            (200.0, TierEnum.FREE, 200.0),
+            (200.0, TierEnum.PRO, 180.0),
+            (200.0, TierEnum.ENTERPRISE, 150.0),
+            (0.0, TierEnum.PRO, 0.0),  # zero price edge case
+            (0.01, TierEnum.PRO, 0.01),  # small value rounds correctly
+        ],
+    )
     def test_discount_amounts_for_all_tiers(self, price, tier, expected):
         assert calculate_discount(price, tier) == expected
 
@@ -100,28 +103,35 @@ class TestCalculateDiscount:
 # validate_task_status_transition
 # ═════════════════════════════════════════════════════════════════════════════
 
+
 class TestValidateTaskStatusTransition:
     """Tests for task status transition validation."""
 
     # ── Valid transitions ─────────────────────────────────────────────────────
 
-    @pytest.mark.parametrize("current,new", [
-        ("todo", "in_progress"),
-        ("in_progress", "done"),
-        ("in_progress", "todo"),   # undo
-        ("done", "in_progress"),   # reopen
-    ])
+    @pytest.mark.parametrize(
+        "current,new",
+        [
+            ("todo", "in_progress"),
+            ("in_progress", "done"),
+            ("in_progress", "todo"),  # undo
+            ("done", "in_progress"),  # reopen
+        ],
+    )
     def test_returns_true_for_valid_transitions(self, current, new):
         result = validate_task_status_transition(current, new)
         assert result is True
 
     # ── Invalid transitions ───────────────────────────────────────────────────
 
-    @pytest.mark.parametrize("current,new", [
-        ("todo", "done"),          # cannot skip in_progress
-        ("done", "todo"),          # cannot go directly back to todo
-        ("todo", "todo"),          # no-op transitions
-    ])
+    @pytest.mark.parametrize(
+        "current,new",
+        [
+            ("todo", "done"),  # cannot skip in_progress
+            ("done", "todo"),  # cannot go directly back to todo
+            ("todo", "todo"),  # no-op transitions
+        ],
+    )
     def test_raises_for_invalid_transitions(self, current, new):
         with pytest.raises(ValueError, match="Cannot transition"):
             validate_task_status_transition(current, new)
@@ -130,6 +140,7 @@ class TestValidateTaskStatusTransition:
 # ═════════════════════════════════════════════════════════════════════════════
 # make_user factory — testing the factory itself
 # ═════════════════════════════════════════════════════════════════════════════
+
 
 class TestMakeUserFactory:
     """
