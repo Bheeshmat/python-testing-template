@@ -1,0 +1,73 @@
+name: CI
+
+# ── Triggers ────────────────────────────────────────────────────────────────
+# Run on every push to any branch, and on every pull request targeting main.
+# This means:
+#   - pushing a feature branch runs CI immediately (fast feedback)
+#   - opening/updating a PR runs CI again (required to pass before merge)
+on:
+  push:
+    branches: ["**"]        # every branch
+  pull_request:
+    branches: [main]        # PRs targeting main only
+
+# ── Jobs ────────────────────────────────────────────────────────────────────
+jobs:
+  backend-ci:
+    name: Backend — Lint & Test
+    runs-on: ubuntu-latest  # fresh Ubuntu VM, destroyed after run
+
+    steps:
+      # ── Step 1: Check out your code ───────────────────────────────────────
+      # Without this, the runner has no code to work with.
+      # actions/checkout is a pre-built action from the GitHub marketplace.
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── Step 2: Install Python ────────────────────────────────────────────
+      # The runner has Python pre-installed but we pin the exact version
+      # to avoid "works on CI but not locally" issues.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # ── Step 3: Cache dependencies ────────────────────────────────────────
+      # Caching saves the installed packages between runs.
+      # If requirements.txt hasn't changed, pip install is skipped entirely.
+      # This takes CI from ~60s to ~10s on subsequent runs.
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          # Cache key: if requirements.txt changes, cache is invalidated
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # ── Step 4: Install dependencies ─────────────────────────────────────
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # ── Step 5: Lint with ruff ────────────────────────────────────────────
+      # ruff check: finds errors, unused imports, style violations
+      # ruff format --check: verifies formatting without changing files
+      #   (exits with error code if any file would be reformatted)
+      - name: Lint with ruff
+        run: |
+          ruff check .
+          ruff format --check .
+
+      # ── Step 6: Run tests ─────────────────────────────────────────────────
+      # -v: verbose output (see each test name)
+      # -m "not evaluation": skip tests marked @pytest.mark.evaluation
+      #   (those call real LLM APIs — too slow and costly for CI)
+      - name: Run tests
+        env:
+          # Provide a dummy key so imports don't fail.
+          # Unit/integration tests mock the LLM — no real API calls are made.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || 'sk-dummy-key-for-ci' }}
+          SECRET_KEY: "ci-test-secret-key-not-used-in-production"
+          ENVIRONMENT: "test"
+        run: |
+          pytest -v -m "not evaluation"
