@@ -1,5 +1,5 @@
 """
-FastAPI application — routes and request/response schemas.
+FastAPI application — routes and request/response schemas. Copy In your FastAPI Project and modify as needed.
 
 TEMPLATE NOTE:
 - Routes are thin — they validate input and delegate to services.
