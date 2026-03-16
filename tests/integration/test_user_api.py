@@ -205,14 +205,20 @@ class TestListTasks:
         self, authenticated_client, user_factory, task_factory
     ):
         """Users should only see their own tasks — not other users' tasks."""
-        # The authenticated_client has user_id=1 (from conftest override)
-        # Create a different user and give them tasks
+        from src.auth import get_current_user
+        from src.main import app
+
+        # Create current user first — they claim id=1 (first insert)
+        current_user = user_factory()
+        app.dependency_overrides[get_current_user] = lambda: {"user_id": current_user.id}
+
+        # Create a different user and give them tasks — they get id=2
         other_user = user_factory()
         task_factory(user_id=other_user.id, title="Other user's task")
 
         response = authenticated_client.get("/tasks")
 
-        # user_id=1 has no tasks — should get empty list
+        # current_user has no tasks — should get empty list
         assert response.status_code == 200
         assert response.json() == []
 

@@ -59,9 +59,9 @@ class TestCalculateDiscount:
         assert result == 75.0
 
     def test_rounds_result_to_two_decimal_places(self):
-        # 33.33 * 0.9 = 29.997 → should round to 30.0
+        # 33.33 * 0.9 = 29.997 → rounds up to 30.0 (third decimal 7 carries over)
         result = calculate_discount(33.33, TierEnum.PRO)
-        assert result == 29.99
+        assert result == 30.0
 
     # ── Parametrize — same logic, multiple inputs ─────────────────────────────
     # Use parametrize when testing the same behaviour with different values.
