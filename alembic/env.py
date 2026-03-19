@@ -26,8 +26,8 @@ config.set_main_option("sqlalchemy.url", database_url)
 #
 # IMPORTANT: all model files must be imported here so SQLAlchemy's Base.metadata
 # knows about every table. If you add a new model file, import it below.
-from src.database import Base  # noqa: E402
 from src import models  # noqa: F401, E402 — registers User, Task with Base.metadata
+from src.database import Base  # noqa: E402
 
 target_metadata = Base.metadata
 
