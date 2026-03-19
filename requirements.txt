@@ -12,7 +12,7 @@ python-multipart>=0.0.9         # Required for form data (OAuth2 login)
 # ── Database ────────────────────────────────────────────────
 sqlalchemy>=2.0.0               # ORM — models, queries, sessions
 aiosqlite>=0.20.0               # Async SQLite driver (SQLite for dev/test)
-# psycopg2-binary>=2.9.0        # UNCOMMENT for PostgreSQL in production
+psycopg2-binary>=2.9.0          # PostgreSQL driver — required when DATABASE_URL is postgresql://
 
 # ── Authentication ──────────────────────────────────────────
 python-jose[cryptography]>=3.3.0  # JWT encoding/decoding

@@ -1,0 +1,63 @@
+# ── docker-compose.yml ────────────────────────────────────────────────────────
+# Defines the full local development stack: backend app + PostgreSQL database.
+# Usage:
+#   docker-compose up --build   → build images and start all containers
+#   docker-compose up           → start using existing images (faster)
+#   docker-compose down         → stop and remove containers
+#   docker-compose down -v      → also remove the database volume (fresh start)
+#   docker-compose logs backend → view logs for a specific service
+
+services:
+
+  # ── PostgreSQL Database ────────────────────────────────────────────────────
+  db:
+    image: postgres:15-alpine          # alpine = minimal OS, smaller image
+    environment:
+      POSTGRES_USER: myapp
+      POSTGRES_PASSWORD: myapp_dev_password
+      POSTGRES_DB: myapp_dev
+    ports:
+      - "5432:5432"                    # host:container — allows local DB clients to connect
+    volumes:
+      - postgres_data:/var/lib/postgresql/data   # persist data between restarts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myapp -d myapp_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI Backend ────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: .                       # build from Dockerfile in current directory
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"                    # host:container — access app at localhost:8000
+    environment:
+      # Database — points to the 'db' service above.
+      # 'db' is the hostname inside the Docker network (Docker DNS resolves service names).
+      DATABASE_URL: postgresql://myapp:myapp_dev_password@db:5432/myapp_dev
+
+      # App secrets — use real values in .env for local dev, never commit .env
+      SECRET_KEY: dev-secret-key-change-in-production
+      ENVIRONMENT: development
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-sk-dummy-for-local-dev}
+
+    depends_on:
+      db:
+        condition: service_healthy     # wait for PostgreSQL to be ready before starting
+    volumes:
+      # Mount source code into the container for live reload during development.
+      # Code changes on your machine are immediately reflected in the container.
+      - ./src:/app/src
+    command: >
+      uvicorn src.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+
+# ── Named Volumes ──────────────────────────────────────────────────────────────
+# Volumes persist data outside the container lifecycle.
+# Without this, all database data is lost when the container stops.
+volumes:
+  postgres_data:
