@@ -1,0 +1,48 @@
+# ── .dockerignore ─────────────────────────────────────────────────────────────
+# Controls what gets sent to the Docker build context (what COPY . . includes).
+# Smaller context = faster builds. Excluded files never enter the image.
+# Similar concept to .gitignore but for Docker.
+
+# Virtual environment — never copy this. The Dockerfile installs deps fresh.
+venv/
+.venv/
+
+# Python bytecode — regenerated automatically at runtime
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Git history — not needed in the container
+.git/
+.gitignore
+
+# Tests — production image doesn't need the test suite
+tests/
+
+# Local database files — the container uses PostgreSQL, not SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment files — secrets are injected via env vars at runtime, not baked in
+.env
+.env.*
+
+# CI/CD config — not needed inside the container
+.github/
+
+# Development/editor files
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Cache directories
+.pytest_cache/
+.ruff_cache/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
