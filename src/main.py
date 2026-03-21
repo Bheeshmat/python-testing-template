@@ -8,6 +8,8 @@ TEMPLATE NOTE:
 - Pydantic BaseModel subclasses define request/response shapes for each endpoint.
 """
 
+import os
+
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
@@ -25,8 +27,12 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Create tables on startup (for development only — use Alembic migrations in production)
-Base.metadata.create_all(bind=engine)
+# Create tables directly — ONLY for local dev and tests where Alembic isn't run.
+# In staging/production, Alembic manages all schema changes (it tracks versions,
+# supports ALTER TABLE, and can rollback). create_all only creates missing tables
+# and silently ignores changes to existing ones — dangerous in production.
+if os.getenv("ENVIRONMENT", "development") in ("development", "test"):
+    Base.metadata.create_all(bind=engine)
 
 
 # ── Request / Response Schemas ────────────────────────────────────────────────
