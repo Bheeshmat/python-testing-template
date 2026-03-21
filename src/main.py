@@ -8,6 +8,14 @@ TEMPLATE NOTE:
 - Pydantic BaseModel subclasses define request/response shapes for each endpoint.
 """
 
+<<<<<<< Updated upstream
+=======
+import logging
+import os
+import subprocess
+from contextlib import asynccontextmanager
+
+>>>>>>> Stashed changes
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
@@ -18,16 +26,64 @@ from src.database import Base, engine, get_db
 from src.models import TaskPriorityEnum, TierEnum
 from src.services import ai_service, flag_service, user_service
 
+logger = logging.getLogger(__name__)
+
+
+# ── App Lifespan ──────────────────────────────────────────────────────────────
+# FastAPI's lifespan runs AFTER uvicorn starts but BEFORE the app accepts requests.
+# This is the right place for DB migrations — uvicorn is already listening (so Railway
+# sees the container as healthy), and the private network is fully available.
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Run startup tasks (migrations) and cleanup on shutdown."""
+    environment = os.getenv("ENVIRONMENT", "development")
+
+    if environment in ("development", "test"):
+        # Local dev / tests: create tables directly (no alembic needed)
+        Base.metadata.create_all(bind=engine)
+        logger.info("create_all: tables created (dev/test mode)")
+    else:
+        # Staging / production: run alembic with timeout protection
+        try:
+            result = subprocess.run(
+                ["alembic", "upgrade", "head"],
+                timeout=60,
+                capture_output=True,
+                text=True,
+            )
+            print(result.stdout)
+            if result.stderr:
+                print(result.stderr)
+            if result.returncode == 0:
+                logger.info("Alembic migrations applied successfully")
+            else:
+                logger.error(
+                    "Alembic migration failed (exit %d): %s",
+                    result.returncode,
+                    result.stderr,
+                )
+        except subprocess.TimeoutExpired:
+            logger.error("Alembic timed out after 60s — skipping migrations")
+        except Exception as e:
+            logger.error("Alembic error: %s", e)
+
+    yield  # app runs here
+
+
 # ── App Initialisation ────────────────────────────────────────────────────────
 app = FastAPI(
     title="Task Manager API",
     description="Reference app for Python testing template",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
+<<<<<<< Updated upstream
 # Create tables on startup (for development only — use Alembic migrations in production)
 Base.metadata.create_all(bind=engine)
 
+=======
+>>>>>>> Stashed changes
 
 # ── Request / Response Schemas ────────────────────────────────────────────────
 class UserCreateRequest(BaseModel):
