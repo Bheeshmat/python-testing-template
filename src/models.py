@@ -12,7 +12,7 @@ TEMPLATE NOTE:
 import enum
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from src.database import Base
@@ -83,3 +83,36 @@ class Task(Base):
 
     # Many-to-one: many Tasks belong to one User
     user = relationship("User", back_populates="tasks")
+
+
+# ── Feature Flag Model ────────────────────────────────────────────────────────
+class FeatureFlag(Base):
+    """
+    Controls feature visibility without redeploying.
+
+    Usage:
+        - enabled=True              → feature on for ALL users
+        - enabled=False             → feature off for all users
+        - enabled=False +
+          allowed_user_ids=[1,2,3] → off globally, on for specific users only
+                                     (useful for internal testing in production)
+
+    Example flags:
+        "ai_summary"       → AI task summary feature
+        "new_dashboard"    → redesigned dashboard
+        "bulk_import"      → CSV bulk task import
+    """
+
+    __tablename__ = "feature_flags"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), unique=True, nullable=False, index=True)
+    enabled = Column(Boolean, default=False, nullable=False)
+
+    # JSON list of user IDs who can see this feature even when globally disabled.
+    # e.g. [1, 5, 23]  → these users see the feature regardless of `enabled`
+    # Stored as JSON so no separate join table is needed (simple use case).
+    allowed_user_ids = Column(JSON, default=list, nullable=False)
+
+    description = Column(String(500), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
