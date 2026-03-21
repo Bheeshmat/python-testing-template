@@ -8,14 +8,11 @@ TEMPLATE NOTE:
 - Pydantic BaseModel subclasses define request/response shapes for each endpoint.
 """
 
-<<<<<<< Updated upstream
-=======
 import logging
 import os
 import subprocess
 from contextlib import asynccontextmanager
 
->>>>>>> Stashed changes
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
@@ -78,12 +75,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-<<<<<<< Updated upstream
-# Create tables on startup (for development only — use Alembic migrations in production)
-Base.metadata.create_all(bind=engine)
-
-=======
->>>>>>> Stashed changes
 
 # ── Request / Response Schemas ────────────────────────────────────────────────
 class UserCreateRequest(BaseModel):
