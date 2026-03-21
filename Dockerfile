@@ -24,6 +24,11 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+# Ensures Python output (stdout/stderr) is sent straight to the container logs
+# without buffering. Critical for observability — without this, logs are lost
+# if the process crashes before the buffer flushes.
+ENV PYTHONUNBUFFERED=1
+
 # Copy only the installed packages from the builder stage.
 # Everything else from the builder (pip, gcc, cache) is left behind.
 COPY --from=builder /install /usr/local
