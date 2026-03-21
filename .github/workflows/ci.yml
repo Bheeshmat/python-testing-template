@@ -100,12 +100,15 @@ jobs:
 
       - name: Deploy to Railway (staging)
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
+          # Account/workspace tokens must be passed as RAILWAY_API_TOKEN.
+          # RAILWAY_TOKEN is for project-scoped tokens only (different token type).
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           railway up \
             --service python-testing-template \
-            --environment staging
+            --environment staging \
+            --project ${{ vars.RAILWAY_PROJECT_ID }} \
+            --ci
 
       # ── Smoke test ───────────────────────────────────────────────────────
       # railway up waits for deploy to complete so no sleep needed.
@@ -148,12 +151,13 @@ jobs:
 
       - name: Deploy to Railway (production)
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           railway up \
             --service python-testing-template \
-            --environment production
+            --environment production \
+            --project ${{ vars.RAILWAY_PROJECT_ID }} \
+            --ci
 
       # ── Smoke test ───────────────────────────────────────────────────────
       # railway up waits for deploy to complete, so no sleep needed here.
