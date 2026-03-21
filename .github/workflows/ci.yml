@@ -88,23 +88,27 @@ jobs:
       url: https://python-testing-template-staging.up.railway.app
 
     steps:
-      # ── Wait for Railway ──────────────────────────────────────────────────
-      # Railway starts deploying staging the moment backend-ci passes.
-      # We sleep here to give Railway time to build the Docker image and
-      # start the new container before we hit the health endpoint.
-      - name: Wait for Railway to deploy staging
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── Deploy to Railway (staging) ───────────────────────────────────────
+      # Railway CLI deploys the current code to the staging environment.
+      # Without --detach: CLI waits for deploy to complete before exiting.
+      # This ensures the smoke test runs against the NEW version.
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway (staging)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          echo "Railway is auto-deploying staging (Wait for CI is ON)..."
-          echo "Waiting 90 seconds for build and container start..."
-          sleep 90
+          railway up \
+            --service python-testing-template \
+            --environment staging
 
       # ── Smoke test ───────────────────────────────────────────────────────
-      # curl flags:
-      #   --fail         exit with error if HTTP status >= 400
-      #   --retry 10     retry up to 10 times if the request fails
-      #   --retry-delay 15  wait 15 seconds between retries (150s total budget)
-      #   --retry-all-errors  retry on any error (connection refused, timeout etc.)
-      # Total wait budget: 90s sleep + (10 retries × 15s) = up to 4 min 30s
+      # railway up waits for deploy to complete so no sleep needed.
+      # Retries handle any brief startup delay after new container starts.
       - name: Smoke test staging
         run: |
           curl --fail \
