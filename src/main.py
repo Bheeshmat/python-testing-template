@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 from src.auth import create_access_token, get_current_user
 from src.database import Base, engine, get_db
 from src.models import TaskPriorityEnum, TierEnum
-from src.services import ai_service, user_service
+from src.services import ai_service, flag_service, user_service
 
 # ── App Initialisation ────────────────────────────────────────────────────────
 app = FastAPI(
@@ -71,6 +71,24 @@ class SummariseRequest(BaseModel):
 
 class AgentRequest(BaseModel):
     message: str
+
+
+class FlagResponse(BaseModel):
+    id: int
+    name: str
+    enabled: bool
+    allowed_user_ids: list[int]
+    description: str | None
+
+
+class FlagCreateRequest(BaseModel):
+    name: str
+    description: str = ""
+    enabled: bool = False
+
+
+class FlagToggleRequest(BaseModel):
+    enabled: bool
 
 
 # ── Health Check ──────────────────────────────────────────────────────────────
@@ -214,3 +232,85 @@ def run_agent(
     """Runs the task management agent. Requires authentication."""
     result = ai_service.run_task_agent(payload.message)
     return {"response": result, "user_id": current_user["user_id"]}
+
+
+# ── Feature Flag Routes (Admin) ───────────────────────────────────────────────
+# In production, protect these with an admin role check.
+# For this template, authentication is sufficient.
+
+
+@app.get("/admin/flags", response_model=list[FlagResponse], tags=["Feature Flags"])
+def list_flags(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """List all feature flags. Requires authentication."""
+    return flag_service.get_all_flags(db)
+
+
+@app.post(
+    "/admin/flags", response_model=FlagResponse, status_code=201, tags=["Feature Flags"]
+)
+def create_flag(
+    payload: FlagCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Create a new feature flag. Defaults to disabled."""
+    return flag_service.create_flag(
+        flag_name=payload.name,
+        description=payload.description,
+        enabled=payload.enabled,
+        db=db,
+    )
+
+
+@app.patch(
+    "/admin/flags/{flag_name}", response_model=FlagResponse, tags=["Feature Flags"]
+)
+def toggle_flag(
+    flag_name: str,
+    payload: FlagToggleRequest,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Toggle a feature flag on or off globally.
+    No redeployment needed — takes effect immediately.
+    """
+    flag = flag_service.set_enabled(flag_name, payload.enabled, db)
+    if not flag:
+        raise HTTPException(status_code=404, detail=f"Flag '{flag_name}' not found.")
+    return flag
+
+
+# ── Feature Flag Usage Example ────────────────────────────────────────────────
+# This route demonstrates how to guard a feature behind a flag.
+# The /ai/summarise route above is always accessible.
+# This variant is only accessible when the "ai_summary_v2" flag is ON.
+
+
+@app.post("/ai/summarise/v2", tags=["AI"])
+def summarise_task_v2(
+    payload: SummariseRequest,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    AI summary v2 — only accessible when 'ai_summary_v2' flag is enabled.
+    Demonstrates feature flag usage: deploy the code, control visibility via flag.
+    """
+    if not flag_service.is_enabled(
+        "ai_summary_v2",
+        user_id=current_user["user_id"],
+        db=db,
+    ):
+        raise HTTPException(
+            status_code=404,
+            detail="Not found.",  # intentionally vague — don't reveal hidden features
+        )
+    try:
+        result = ai_service.summarise_task(payload.title, payload.description)
+        return {**result, "version": "v2"}
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
