@@ -14,6 +14,7 @@ import subprocess
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -75,6 +76,18 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# ── CORS ──────────────────────────────────────────────────────────────────────
+# Allows the React frontend (on a different origin) to call this API.
+# ALLOWED_ORIGINS is a comma-separated list set per environment:
+#   Local dev:  http://localhost:5173 (Vite dev server)
+#   Production: https://your-app.vercel.app
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(","),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ── Request / Response Schemas ────────────────────────────────────────────────
 class UserCreateRequest(BaseModel):
